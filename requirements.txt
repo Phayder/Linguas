@@ -1,3 +1,4 @@
 dash==2.1.0
 pandas
 pymysql
+gunicorn
