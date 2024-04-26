@@ -20,7 +20,7 @@ server = Flask(__name__)
 
 # Define Dash app
 app = dash.Dash(__name__, server=server, url_base_pathname='/dashboard/')
-
+server = app.server
 # Define layout
 app.layout = html.Div([
     dcc.Graph(id='live-update-graph'),
