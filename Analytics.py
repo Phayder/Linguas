@@ -5,7 +5,7 @@ import plotly.graph_objs as go
 import pandas as pd
 import pymysql
 
-server = app.server
+server = app:server
 
 
 
