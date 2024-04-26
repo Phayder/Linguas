@@ -5,6 +5,10 @@ import plotly.graph_objs as go
 import pandas as pd
 import pymysql
 
+server = app.server
+
+
+
 # Connect to your MySQL database
 # Replace 'your_host', 'your_username', 'your_password', and 'your_database' with your actual database credentials
 conn = pymysql.connect(
