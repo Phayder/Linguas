@@ -1,13 +1,10 @@
+from flask import Flask
 import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output
 import plotly.graph_objs as go
 import pandas as pd
 import pymysql
-
-server = app:server
-
-
 
 # Connect to your MySQL database
 # Replace 'your_host', 'your_username', 'your_password', and 'your_database' with your actual database credentials
@@ -18,8 +15,11 @@ conn = pymysql.connect(
     database='Cephalopod'
 )
 
+# Define Flask app
+server = Flask(__name__)
+
 # Define Dash app
-app = dash.Dash(__name__)
+app = dash.Dash(__name__, server=server, url_base_pathname='/dashboard/')
 
 # Define layout
 app.layout = html.Div([
@@ -37,7 +37,7 @@ app.layout = html.Div([
     [Input('interval-component', 'n_intervals')]
 )
 def update_graph(n):
-    # Query data from database
+   # Query data from database
     query = "SELECT LanguageOne, COUNT(*) as count FROM Cephalopod GROUP BY LanguageOne"
     df = pd.read_sql(query, con=conn)
 
@@ -45,8 +45,9 @@ def update_graph(n):
     fig = go.Figure(data=[go.Bar(x=df['LanguageOne'], y=df['count'])])
     fig.update_layout(title='Users by Country', xaxis_title='Country', yaxis_title='Number of Users')
 
+
     return fig
 
 # Run the app
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    server.run(debug=True)
