@@ -5,7 +5,7 @@ import plotly.express as px
 from sqlalchemy import create_engine
 
 # Create SQLAlchemy engine
-engine = create_engine('mysql+pymysql://william5:octopus1357@68.178.145.205/Cephalopod')
+
 
 # Query to fetch data
 query = "SELECT Country, Language, TimeDate, Source FROM Cephalopod"
