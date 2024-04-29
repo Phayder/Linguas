@@ -31,10 +31,10 @@ country_counts = df['Country'].value_counts().reset_index(name='Count')
 source_counts = df['Source'].value_counts().reset_index(name='Count')
 
 # Initialize Dash app
-app = dash.Dash(__name__)
-server = app.server
+server = dash.Dash(__name__)
+
 # Define the layout of your Dash app
-app.layout = html.Div(children=[
+server.layout = html.Div(children=[
     html.H1("Analytics Dashboard"),
     
     dcc.Dropdown(
@@ -65,7 +65,7 @@ app.layout = html.Div(children=[
 ])
 
 # Define callback to update graphs
-@app.callback(
+@server.callback(
     [dash.dependencies.Output('count-over-time-graph', 'figure'),
      dash.dependencies.Output('country-graph', 'figure'),
      dash.dependencies.Output('source-graph', 'figure')],
@@ -91,4 +91,4 @@ def update_graphs(selected_country, selected_source):
 
 # Run the Dash app
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    server.run_server(host='0.0.0.0', port=8080, debug=False)
