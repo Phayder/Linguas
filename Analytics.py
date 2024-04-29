@@ -1,53 +1,94 @@
-from flask import Flask
 import dash
 from dash import dcc, html
-from dash.dependencies import Input, Output
-import plotly.graph_objs as go
 import pandas as pd
-import pymysql
+import plotly.express as px
+from sqlalchemy import create_engine
 
-# Connect to your MySQL database
-# Replace 'your_host', 'your_username', 'your_password', and 'your_database' with your actual database credentials
-conn = pymysql.connect(
-    host='68.178.145.205',
-    user='william5',
-    password='octopus1357',
-    database='Cephalopod'
-)
+# Create SQLAlchemy engine
+engine = create_engine('mysql+pymysql://william5:octopus1357@68.178.145.205/Cephalopod')
 
-# Define Flask app
-server = Flask(__name__)
+# Query to fetch data
+query = "SELECT Country, Language, TimeDate, Source FROM Cephalopod"
 
-# Define Dash app
-app = dash.Dash(__name__, server=server, url_base_pathname='/dashboard/')
+# Fetch data into a DataFrame using SQLAlchemy engine
+df = pd.read_sql(query, engine)
+
+# Close the engine connection
+engine.dispose()
+
+# Reset index to use it as x-values
+df.reset_index(inplace=True)
+
+# Convert Timestamp column to datetime
+df['TimeDate'] = pd.to_datetime(df['TimeDate'])
+
+# Extract date and count occurrences per day
+df['Date'] = df['TimeDate'].dt.date  # Extract only the date without time
+daily_counts = df.groupby('Date').size().reset_index(name='Count')
+
+# Count occurrences of Country and Source
+country_counts = df['Country'].value_counts().reset_index(name='Count')
+source_counts = df['Source'].value_counts().reset_index(name='Count')
+
+# Initialize Dash app
+app = dash.Dash(__name__)
 server = app.server
-# Define layout
-app.layout = html.Div([
-    dcc.Graph(id='live-update-graph'),
-    dcc.Interval(
-        id='interval-component',
-        interval=5*1000,  # Update every 5 seconds
-        n_intervals=0
-    )
+# Define the layout of your Dash app
+app.layout = html.Div(children=[
+    html.H1("Analytics Dashboard"),
+    
+    dcc.Dropdown(
+        id='country-dropdown',
+        options=[
+            {'label': 'Country 1', 'value': 'country1'},
+            {'label': 'Country 2', 'value': 'country2'},
+            # Add more options as needed
+        ],
+        value='country1'
+    ),
+    
+    dcc.Dropdown(
+        id='source-dropdown',
+        options=[
+            {'label': 'Source 1', 'value': 'source1'},
+            {'label': 'Source 2', 'value': 'source2'},
+            # Add more options as needed
+        ],
+        value='source1'
+    ),
+    
+    html.Div([
+        dcc.Graph(id='count-over-time-graph'),
+        dcc.Graph(id='country-graph'),
+        dcc.Graph(id='source-graph')
+    ])
 ])
 
-# Define callback to update graph
+# Define callback to update graphs
 @app.callback(
-    Output('live-update-graph', 'figure'),
-    [Input('interval-component', 'n_intervals')]
+    [dash.dependencies.Output('count-over-time-graph', 'figure'),
+     dash.dependencies.Output('country-graph', 'figure'),
+     dash.dependencies.Output('source-graph', 'figure')],
+    [dash.dependencies.Input('country-dropdown', 'value'),
+     dash.dependencies.Input('source-dropdown', 'value')]
 )
-def update_graph(n):
-   # Query data from database
-    query = "SELECT LanguageOne, COUNT(*) as count FROM Cephalopod GROUP BY LanguageOne"
-    df = pd.read_sql(query, con=conn)
+# Update the callback function to use 'Date' column explicitly for x-values
+def update_graphs(selected_country, selected_source):
+    # Filter data based on selected country and source
+    filtered_df = df[(df['Country'] == selected_country) & (df['Source'] == selected_source)]
+    
+    # Create line graph for count over time
+    count_over_time_fig = px.line(daily_counts, x='Date', y='Count', labels={'Date': 'Date', 'Count': 'Total Count'})
 
-    # Create plot
-    fig = go.Figure(data=[go.Bar(x=df['LanguageOne'], y=df['count'])])
-    fig.update_layout(title='Users by Country', xaxis_title='Country', yaxis_title='Number of Users')
+    # Create column graph for country
+    country_fig = px.bar(country_counts, x='Country', y='Count', labels={'Country': 'Country', 'Count': 'Count'})
+
+    # Create column graph for source
+    source_fig = px.bar(source_counts, x='Source', y='Count', labels={'Source': 'Source', 'Count': 'Count'})
+
+    return count_over_time_fig, country_fig, source_fig
 
 
-    return fig
-
-# Run the app
+# Run the Dash app
 if __name__ == '__main__':
-    server.run(debug=True)
+    app.run_server(debug=True)
